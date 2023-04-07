@@ -1,26 +1,132 @@
 import { Request, Response } from "express";
+import { isValidId } from "helpers";
+import { StatusCodes as STATUS_CODES } from "http-status-codes";
+import Joi from "joi";
 
-import { createMovie, getMovies } from "../models/movies";
+import {
+  createMovie,
+  deleteMovieById,
+  getAllMovies,
+  getMovieById,
+  updateMovieById,
+} from "../models/movies";
 
-export const getAllMovies = async (req: Request, res: Response) => {
+// TODO: Adicionar paginação
+export const getAll = async (req: Request, res: Response) => {
   try {
-    const movies = await getMovies();
+    const movies = await getAllMovies();
 
-    return res.status(200).send(movies);
+    return res.status(STATUS_CODES.OK).send(movies);
   } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
 };
 
-export const addMovie = async (req: Request, res: Response) => {
+export const getById = async (req: Request, res: Response) => {
   try {
-    const { message } = req.body;
-    const movie = await createMovie({ message });
+    const id = req.params["id"]?.trim();
 
-    return res.status(200).send(movie);
+    if (!id || !isValidId(id)) {
+      return res
+        .status(STATUS_CODES.BAD_REQUEST)
+        .send({ message: "Id is required." });
+    }
+
+    const movie = await getMovieById(id);
+
+    if (!movie) {
+      return res
+        .status(STATUS_CODES.NOT_FOUND)
+        .send({ message: "Movie not found." });
+    }
+
+    return res.send(movie);
   } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+  }
+};
+
+export const create = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    message: Joi.string().required(),
+  });
+
+  try {
+    const { value, error } = schema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      const errorDetails = error.details.map((detail) =>
+        detail.message.replace(/\"/g, "'")
+      );
+      return res
+        .status(STATUS_CODES.BAD_REQUEST)
+        .send({ message: "Validation error", details: errorDetails });
+    }
+
+    const movie = await createMovie(value);
+
+    return res.status(STATUS_CODES.OK).send(movie);
+  } catch (error) {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+  }
+};
+
+export const updateById = async (req: Request, res: Response) => {
+  try {
+    const id = req.params["id"]?.trim();
+
+    if (!id || !isValidId(id)) {
+      return res
+        .status(STATUS_CODES.BAD_REQUEST)
+        .send({ message: "Id is required." });
+    }
+
+    const values = req.body;
+
+    // Validar se o objeto está vazio ou se tem propriedades não necessárias
+    // Utilizar Joi
+    if (!values) {
+      return res
+        .status(STATUS_CODES.BAD_REQUEST)
+        .send({ message: "Values are required." });
+    }
+
+    const updatedMovie = await updateMovieById(id, values);
+
+    if (!updatedMovie) {
+      return res
+        .status(STATUS_CODES.NOT_FOUND)
+        .send({ message: "Movie not found." });
+    }
+
+    return res.status(STATUS_CODES.OK).send(updatedMovie);
+  } catch (error) {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+  }
+};
+
+export const deleteById = async (req: Request, res: Response) => {
+  try {
+    const id = req.params["id"]?.trim();
+
+    if (!id || !isValidId(id)) {
+      return res
+        .status(STATUS_CODES.BAD_REQUEST)
+        .send({ message: "Id is required." });
+    }
+
+    const deletedMovie = await deleteMovieById(id);
+
+    if (!deletedMovie) {
+      return res
+        .status(STATUS_CODES.NOT_FOUND)
+        .send({ message: "Movie not found." });
+    }
+
+    return res
+      .status(STATUS_CODES.OK)
+      .send({ message: "Movie successfully deleted." });
+  } catch (error) {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
 };
