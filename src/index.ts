@@ -3,6 +3,11 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 
+import db from "./config/dbConnect";
+
+db.on("error", (e) => console.error("🔴 Database connection error!\n", e));
+db.once("open", () => console.log("🟢 Database connection successful!"));
+
 const PORT = process.env.PORT || 3333;
 
 const app = express();
