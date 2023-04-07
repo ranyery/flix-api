@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { isValidId } from "helpers";
 import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import Joi from "joi";
 
+import { isValidId } from "../helpers";
 import {
   createMovie,
   deleteMovieById,
