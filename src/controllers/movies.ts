@@ -55,8 +55,8 @@ export const create = async (req: Request, res: Response) => {
     const { value, error } = schema.validate(req.body, { abortEarly: false });
 
     if (error) {
-      const errorDetails = error.details.map((detail) =>
-        detail.message.replace(/\"/g, "'")
+      const errorDetails = error.details.map(
+        (detail) => `Property ${detail.message.replace(/\"/g, "'")}`
       );
       return res
         .status(STATUS_CODES.UNPROCESSABLE_ENTITY)
