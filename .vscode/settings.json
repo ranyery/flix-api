@@ -1,0 +1,24 @@
+{
+  "editor.rulers": [80, 120],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "extensions.ignoreRecommendations": false,
+  "editor.formatOnSave": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "git.allowNoVerifyCommit": false,
+  "files.exclude": {
+    ".vscode": true,
+    "node_modules": true,
+    ".editorconfig": true,
+    ".env": true,
+    ".gitignore": true,
+    ".prettierrc": true,
+    "package-lock.json": true
+  }
+}

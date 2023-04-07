@@ -1,7 +1,6 @@
 {
   "name": "flix-api",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "start:dev": "ts-node-dev --inspect --respawn --transpile-only src/index.ts",

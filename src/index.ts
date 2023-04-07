@@ -4,13 +4,12 @@ import cors from "cors";
 import express from "express";
 
 import db from "./config/dbConnect";
+import router from "./router";
 
 db.on("error", (e) => console.error("🔴 Database connection error!\n", e));
 db.once("open", () => console.log("🟢 Database connection successful!"));
 
 const PORT = process.env.PORT || 3333;
-
-import router from "./router";
 
 const app = express();
 
