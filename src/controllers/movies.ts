@@ -16,7 +16,7 @@ export const getAll = async (req: Request, res: Response) => {
   try {
     const movies = await getAllMovies();
 
-    return res.status(STATUS_CODES.OK).send(movies);
+    return res.send(movies); // StatusCode 200 is set by default
   } catch (error) {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
@@ -59,13 +59,13 @@ export const create = async (req: Request, res: Response) => {
         detail.message.replace(/\"/g, "'")
       );
       return res
-        .status(STATUS_CODES.BAD_REQUEST)
+        .status(STATUS_CODES.UNPROCESSABLE_ENTITY)
         .send({ message: "Validation error", details: errorDetails });
     }
 
     const movie = await createMovie(value);
 
-    return res.status(STATUS_CODES.OK).send(movie);
+    return res.send(movie);
   } catch (error) {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
@@ -99,7 +99,7 @@ export const updateById = async (req: Request, res: Response) => {
         .send({ message: "Movie not found." });
     }
 
-    return res.status(STATUS_CODES.OK).send(updatedMovie);
+    return res.send(updatedMovie);
   } catch (error) {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
@@ -123,9 +123,7 @@ export const deleteById = async (req: Request, res: Response) => {
         .send({ message: "Movie not found." });
     }
 
-    return res
-      .status(STATUS_CODES.OK)
-      .send({ message: "Movie successfully deleted." });
+    return res.send({ message: "Movie successfully deleted." });
   } catch (error) {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }
