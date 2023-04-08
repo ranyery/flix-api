@@ -5,28 +5,42 @@ import { uid } from "../helpers";
 const movieSchema = new mongoose.Schema(
   {
     _id: { type: String, default: () => uid() },
-    message: { type: String, required: true },
+    title: { type: String, required: true },
+    imdbId: { type: String, required: false },
+    imdbRating: { type: String, required: false },
+    tmdbId: { type: Number, required: false },
+    releaseDate: { type: String, required: false },
+    isActive: { type: Boolean, required: false, default: false },
+    isHighlight: { type: Boolean, required: false, default: false },
+    clicks: { type: Number, required: false, default: 0 },
+    views: { type: Number, required: false, default: 0 },
+    youtubeId: { type: String, required: false },
+    size: { type: String, required: false },
+    languages: { type: [String], required: false },
+    magnets: {
+      type: [
+        {
+          title: { type: String, required: false },
+          link: { type: String, required: false },
+          _id: false,
+        },
+      ],
+      required: false,
+    },
+    image: {
+      poster: { type: String, required: false },
+      background: { type: String, required: false },
+    },
+    video: {
+      formats: { type: [String], required: false },
+      quality: { type: [String], required: false },
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
     versionKey: false,
   }
 );
-
-movieSchema.set("toObject", {
-  virtuals: true,
-  transform: function (doc, ret) {
-    delete ret._id;
-  },
-});
-
-movieSchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-  transform: function (doc, ret) {
-    delete ret._id;
-  },
-});
 
 // Model
 export const MovieModel = mongoose.model("Movie", movieSchema);

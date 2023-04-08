@@ -12,34 +12,42 @@ import {
   updateMovieById,
 } from "../models/movies";
 
+const handleErrorId = (res: Response, message = "Id is required.") => {
+  return res.status(STATUS_CODES.BAD_REQUEST).send({ message });
+};
+
+const handleServerError = (res: Response, error: unknown) => {
+  console.error(error);
+  res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+};
+
 export const getAll = async (req: Request, res: Response) => {
+  const sortMap: { [k: string]: SortOrder } = {
+    1: 1,
+    asc: 1,
+    ascending: 1,
+    "-1": -1,
+    desc: -1,
+    descending: -1,
+  };
+
+  const page = toNumber(req.query.page, 1);
+  const limit = toNumber(req.query.limit, 20);
+  const sort = sortMap[req.query.sort as keyof typeof sortMap] || -1;
+
+  const requiredProps = [
+    "title",
+    "imdbRating",
+    "releaseDate",
+    "image.poster",
+    "video.formats",
+    "video.quality",
+  ];
+
   try {
-    const sortMap: { [k: string]: SortOrder } = {
-      1: 1,
-      asc: 1,
-      ascending: 1,
-      "-1": -1,
-      desc: -1,
-      descending: -1,
-    };
-
-    const page = toNumber(req.query.page, 1);
-    const limit = toNumber(req.query.limit, 20);
-    const sort = sortMap[req.query.sort as keyof typeof sortMap] || -1;
-
-    const requiredProps = [
-      "title",
-      "image",
-      "likes",
-      "oldPrice",
-      "price",
-      "isFreeShipping",
-      "createdAt",
-    ];
-
     const [totalCount, movies] = await Promise.all([
-      MovieModel.countDocuments({ isActive: true }),
-      MovieModel.find({ isActive: true }, requiredProps.join(" "))
+      MovieModel.countDocuments({ isActive: false }),
+      MovieModel.find({ isActive: false }, requiredProps.join(" "))
         .lean()
         .sort({ createdAt: sort })
         .skip((page - 1) * limit)
@@ -47,12 +55,8 @@ export const getAll = async (req: Request, res: Response) => {
     ]);
 
     const filteredMovies = movies.map((movie) => {
-      if (movie["message"] === "") {
-        delete movie["message" as keyof typeof movie];
-      }
-
-      if (!movie["message"]) {
-        delete movie["message" as keyof typeof movie];
+      if (movie["imdbRating"] === "") {
+        delete movie["imdbRating"];
       }
 
       return movie;
@@ -67,20 +71,15 @@ export const getAll = async (req: Request, res: Response) => {
 
     return res.send(response); // StatusCode 200 is set by default
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+    handleServerError(res, error);
   }
 };
 
 export const getById = async (req: Request, res: Response) => {
+  const id = req.params["id"]?.trim();
+  if (!id || !isValidId(id)) return handleErrorId(res);
+
   try {
-    const id = req.params["id"]?.trim();
-
-    if (!id || !isValidId(id)) {
-      return res
-        .status(STATUS_CODES.BAD_REQUEST)
-        .send({ message: "Id is required." });
-    }
-
     const movie = await getMovieById(id);
 
     if (!movie) {
@@ -91,56 +90,86 @@ export const getById = async (req: Request, res: Response) => {
 
     return res.send(movie);
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+    handleServerError(res, error);
   }
 };
 
 export const create = async (req: Request, res: Response) => {
   const schema = Joi.object({
-    message: Joi.string().required(),
+    title: Joi.string().required(),
+    imdbId: Joi.string(),
+    imdbRating: Joi.string(),
+    tmdbId: Joi.number(),
+    releaseDate: Joi.string(),
+    youtubeId: Joi.string(),
+    size: Joi.string(),
+    languages: Joi.array<string>().items(Joi.string()),
+    magnets: Joi.array().items(
+      Joi.object({ title: Joi.string(), link: Joi.string() })
+    ),
+    image: Joi.object({ poster: Joi.string(), background: Joi.string() }),
+    video: Joi.object({
+      formats: Joi.array<string>().items(Joi.string()),
+      quality: Joi.array<string>().items(Joi.string()),
+    }),
   });
 
+  const { value, error } = schema.validate(req.body, { abortEarly: false });
+
+  if (error) {
+    const errorDetails = error.details.map(
+      (detail) => `Property ${detail.message.replace(/\"/g, "'")}`
+    );
+    return res
+      .status(STATUS_CODES.UNPROCESSABLE_ENTITY)
+      .send({ message: "Validation error", details: errorDetails });
+  }
+
   try {
-    const { value, error } = schema.validate(req.body, { abortEarly: false });
-
-    if (error) {
-      const errorDetails = error.details.map(
-        (detail) => `Property ${detail.message.replace(/\"/g, "'")}`
-      );
-      return res
-        .status(STATUS_CODES.UNPROCESSABLE_ENTITY)
-        .send({ message: "Validation error", details: errorDetails });
-    }
-
     const movie = await createMovie(value);
 
     return res.send(movie);
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+    handleServerError(res, error);
   }
 };
 
 export const updateById = async (req: Request, res: Response) => {
+  const id = req.params["id"]?.trim();
+  if (!id || !isValidId(id)) return handleErrorId(res);
+
+  const schema = Joi.object({
+    title: Joi.string(),
+    imdbId: Joi.string(),
+    imdbRating: Joi.string(),
+    tmdbId: Joi.number(),
+    releaseDate: Joi.string(),
+    youtubeId: Joi.string(),
+    size: Joi.string(),
+    languages: Joi.array<string>().items(Joi.string()),
+    magnets: Joi.array().items(
+      Joi.object({ title: Joi.string(), link: Joi.string() })
+    ),
+    image: Joi.object({ poster: Joi.string(), background: Joi.string() }),
+    video: Joi.object({
+      formats: Joi.array<string>().items(Joi.string()),
+      quality: Joi.array<string>().items(Joi.string()),
+    }),
+  });
+
+  const { value, error } = schema.validate(req.body, { abortEarly: false });
+
+  if (error) {
+    const errorDetails = error.details.map(
+      (detail) => `Property ${detail.message.replace(/\"/g, "'")}`
+    );
+    return res
+      .status(STATUS_CODES.UNPROCESSABLE_ENTITY)
+      .send({ message: "Validation error", details: errorDetails });
+  }
+
   try {
-    const id = req.params["id"]?.trim();
-
-    if (!id || !isValidId(id)) {
-      return res
-        .status(STATUS_CODES.BAD_REQUEST)
-        .send({ message: "Id is required." });
-    }
-
-    const values = req.body;
-
-    // Validar se o objeto está vazio ou se tem propriedades não necessárias
-    // Utilizar Joi
-    if (!values) {
-      return res
-        .status(STATUS_CODES.BAD_REQUEST)
-        .send({ message: "Values are required." });
-    }
-
-    const updatedMovie = await updateMovieById(id, values);
+    const updatedMovie = await updateMovieById(id, value);
 
     if (!updatedMovie) {
       return res
@@ -150,20 +179,15 @@ export const updateById = async (req: Request, res: Response) => {
 
     return res.send(updatedMovie);
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+    handleServerError(res, error);
   }
 };
 
 export const deleteById = async (req: Request, res: Response) => {
+  const id = req.params["id"]?.trim();
+  if (!id || !isValidId(id)) return handleErrorId(res);
+
   try {
-    const id = req.params["id"]?.trim();
-
-    if (!id || !isValidId(id)) {
-      return res
-        .status(STATUS_CODES.BAD_REQUEST)
-        .send({ message: "Id is required." });
-    }
-
     const deletedMovie = await deleteMovieById(id);
 
     if (!deletedMovie) {
@@ -174,6 +198,6 @@ export const deleteById = async (req: Request, res: Response) => {
 
     return res.send({ message: "Movie successfully deleted." });
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+    handleServerError(res, error);
   }
 };
