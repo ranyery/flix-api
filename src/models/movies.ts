@@ -68,3 +68,9 @@ export const deleteMovieById = (id: string) =>
 
 export const updateMovieById = (id: string, value: Record<string, any>) =>
   MovieModel.findByIdAndUpdate(id, value, { new: true });
+
+export const updateClicks = (id: string) =>
+  MovieModel.findByIdAndUpdate(id, { $inc: { clicks: 1 } }, { new: true });
+
+export const updateViews = (id: string) =>
+  MovieModel.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true });

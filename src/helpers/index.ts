@@ -1,4 +1,6 @@
+import { Response } from "express";
 import isNumeric from "fast-isnumeric";
+import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import ShortUniqueId from "short-unique-id";
 
 const UID_LENGTH = 6;
@@ -16,4 +18,13 @@ const toNumber = (value: any, defaultValue = 0) => {
   return Number(value);
 };
 
-export { uid, isValidId, toNumber };
+const handleErrorId = (res: Response, message = "Id is required.") => {
+  return res.status(STATUS_CODES.BAD_REQUEST).send({ message });
+};
+
+const handleServerError = (res: Response, error: unknown) => {
+  console.error(error);
+  res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
+};
+
+export { uid, isValidId, toNumber, handleErrorId, handleServerError };

@@ -3,7 +3,12 @@ import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import Joi from "joi";
 import { SortOrder } from "mongoose";
 
-import { isValidId, toNumber } from "../helpers";
+import {
+  handleErrorId,
+  handleServerError,
+  isValidId,
+  toNumber,
+} from "../helpers";
 import {
   createMovie,
   deleteMovieById,
@@ -11,15 +16,6 @@ import {
   MovieModel,
   updateMovieById,
 } from "../models/movies";
-
-const handleErrorId = (res: Response, message = "Id is required.") => {
-  return res.status(STATUS_CODES.BAD_REQUEST).send({ message });
-};
-
-const handleServerError = (res: Response, error: unknown) => {
-  console.error(error);
-  res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
-};
 
 export const getAll = async (req: Request, res: Response) => {
   const sortMap: { [k: string]: SortOrder } = {
