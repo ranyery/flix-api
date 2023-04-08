@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 
 import db from "./config/dbConnect";
+import { setCacheControl } from "./middlewares/setCacheControl";
 import router from "./router";
 
 db.on("error", (e) => console.error("🔴 Database connection error!\n", e));
@@ -19,6 +20,8 @@ app.use(compression());
 app.use(express.json());
 
 app.disable("x-powered-by");
+
+app.use(setCacheControl);
 
 app.get("/", (request, response) => {
   response.send({ message: "Hello, World!" });
