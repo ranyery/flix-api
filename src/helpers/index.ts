@@ -1,3 +1,4 @@
+import isNumeric from "fast-isnumeric";
 import ShortUniqueId from "short-unique-id";
 
 const UID_LENGTH = 6;
@@ -7,4 +8,12 @@ const uid = new ShortUniqueId({ length: UID_LENGTH });
 
 const isValidId = (id: string): boolean => VALID_ID_PATTERN.test(id);
 
-export { uid, isValidId };
+const toNumber = (value: any, defaultValue = 0) => {
+  if (!value || !isNumeric(value)) {
+    return defaultValue;
+  }
+
+  return Number(value);
+};
+
+export { uid, isValidId, toNumber };

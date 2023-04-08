@@ -1,22 +1,71 @@
 import { Request, Response } from "express";
 import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import Joi from "joi";
+import { SortOrder } from "mongoose";
 
-import { isValidId } from "../helpers";
+import { isValidId, toNumber } from "../helpers";
 import {
   createMovie,
   deleteMovieById,
-  getAllMovies,
   getMovieById,
+  MovieModel,
   updateMovieById,
 } from "../models/movies";
 
-// TODO: Adicionar paginação
 export const getAll = async (req: Request, res: Response) => {
   try {
-    const movies = await getAllMovies();
+    const sortMap: { [k: string]: SortOrder } = {
+      1: 1,
+      asc: 1,
+      ascending: 1,
+      "-1": -1,
+      desc: -1,
+      descending: -1,
+    };
 
-    return res.send(movies); // StatusCode 200 is set by default
+    const page = toNumber(req.query.page, 1);
+    const limit = toNumber(req.query.limit, 20);
+    const sort = sortMap[req.query.sort as keyof typeof sortMap] || -1;
+
+    const requiredProps = [
+      "title",
+      "image",
+      "likes",
+      "oldPrice",
+      "price",
+      "isFreeShipping",
+      "createdAt",
+    ];
+
+    const [totalCount, movies] = await Promise.all([
+      MovieModel.countDocuments({ isActive: true }),
+      MovieModel.find({ isActive: true }, requiredProps.join(" "))
+        .lean()
+        .sort({ createdAt: sort })
+        .skip((page - 1) * limit)
+        .limit(limit),
+    ]);
+
+    const filteredMovies = movies.map((movie) => {
+      if (movie["message"] === "") {
+        delete movie["message" as keyof typeof movie];
+      }
+
+      if (!movie["message"]) {
+        delete movie["message" as keyof typeof movie];
+      }
+
+      return movie;
+    });
+
+    const response = {
+      currentPage: page,
+      totalCount: totalCount,
+      hasMore: totalCount > page * limit,
+      movies: filteredMovies,
+    };
+
+    return res.send(response); // StatusCode 200 is set by default
   } catch (error) {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send();
   }

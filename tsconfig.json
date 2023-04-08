@@ -3,7 +3,6 @@
     "strict": true,
     "module": "NodeNext",
     "moduleResolution": "node",
-    "baseUrl": "src",
     "rootDir": "src",
     "outDir": "dist",
     "target": "ES2015",

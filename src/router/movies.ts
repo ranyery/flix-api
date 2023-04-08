@@ -7,9 +7,10 @@ import {
   getById,
   updateById,
 } from "../controllers/movies";
+import { validateLimit } from "../middlewares/validateLimit";
 
 export default (router: Router) => {
-  router.get("/movies", getAll);
+  router.get("/movies", validateLimit, getAll);
   router.get("/movies/:id", getById);
   router.post("/movies", create);
   router.put("/movies/:id", updateById);
