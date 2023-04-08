@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Request, Response } from "express";
 import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import Joi from "joi";
@@ -76,12 +77,23 @@ export const getById = async (req: Request, res: Response) => {
   if (!id || !isValidId(id)) return handleErrorId(res);
 
   try {
-    const movie = await getMovieById(id);
+    const movie = (await getMovieById(id))?.toJSON();
 
     if (!movie) {
       return res
         .status(STATUS_CODES.NOT_FOUND)
         .send({ message: "Movie not found." });
+    }
+
+    let infosFromTmdb;
+
+    if (movie["tmdbId"]) {
+      infosFromTmdb = await getInfosFromTmdb(movie["tmdbId"]);
+    }
+
+    if (infosFromTmdb?.["success"]) {
+      const { valuesToUpdate, otherInfos } = infosFromTmdb;
+      Object.assign(movie, { ...valuesToUpdate, ...otherInfos });
     }
 
     return res.send(movie);
@@ -100,6 +112,7 @@ export const create = async (req: Request, res: Response) => {
     youtubeId: Joi.string(),
     size: Joi.string(),
     languages: Joi.array<string>().items(Joi.string()),
+    genres: Joi.array<string>().items(Joi.string()),
     magnets: Joi.array().items(
       Joi.object({ title: Joi.string(), link: Joi.string() })
     ),
@@ -122,6 +135,19 @@ export const create = async (req: Request, res: Response) => {
   }
 
   try {
+    let infosFromTmdb;
+
+    if (value["tmdbId"] !== undefined) {
+      infosFromTmdb = await getInfosFromTmdb(value["tmdbId"]);
+    }
+
+    if (infosFromTmdb?.["success"]) {
+      const { valuesToUpdate } = infosFromTmdb;
+      Object.assign(value, valuesToUpdate);
+    } else {
+      value["tmdbId"] = 0;
+    }
+
     const movie = await createMovie(value);
 
     return res.send(movie);
@@ -143,6 +169,7 @@ export const updateById = async (req: Request, res: Response) => {
     youtubeId: Joi.string(),
     size: Joi.string(),
     languages: Joi.array<string>().items(Joi.string()),
+    genres: Joi.array<string>().items(Joi.string()),
     magnets: Joi.array().items(
       Joi.object({ title: Joi.string(), link: Joi.string() })
     ),
@@ -165,12 +192,30 @@ export const updateById = async (req: Request, res: Response) => {
   }
 
   try {
-    const updatedMovie = await updateMovieById(id, value);
+    let infosFromTmdb;
+
+    if (value["tmdbId"] !== undefined) {
+      infosFromTmdb = await getInfosFromTmdb(value["tmdbId"]);
+    }
+
+    if (infosFromTmdb?.["success"]) {
+      const { valuesToUpdate } = infosFromTmdb;
+      Object.assign(value, valuesToUpdate);
+    } else {
+      value["tmdbId"] = 0;
+    }
+
+    const updatedMovie = (await updateMovieById(id, value))?.toJSON();
 
     if (!updatedMovie) {
       return res
         .status(STATUS_CODES.NOT_FOUND)
         .send({ message: "Movie not found." });
+    }
+
+    if (infosFromTmdb?.["success"]) {
+      const { otherInfos } = infosFromTmdb;
+      Object.assign(updatedMovie, otherInfos);
     }
 
     return res.send(updatedMovie);
@@ -195,5 +240,39 @@ export const deleteById = async (req: Request, res: Response) => {
     return res.send({ message: "Movie successfully deleted." });
   } catch (error) {
     handleServerError(res, error);
+  }
+};
+
+const getInfosFromTmdb = async (id: number) => {
+  const API_KEY = "38c007f28d5b66f36b9c3cf8d8452a4b";
+
+  try {
+    const { data } = await axios.get(
+      `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}&language=pt-br`
+    );
+
+    const valuesToUpdate = {
+      releaseDate: data["release_date"],
+      genres: data["genres"].map((item: Record<string, string>) => item.name),
+      image: {
+        poster: data["poster_path"],
+      },
+      imdbId: data["imdb_id"],
+      title: data["title"],
+    };
+
+    const otherInfos = {
+      originalTitle: data["original_title"],
+      overview: data["overview"],
+      runtime: data["runtime"],
+      image: {
+        poster: data["poster_path"],
+        background: data["backdrop_path"],
+      },
+    };
+
+    return { success: true, valuesToUpdate, otherInfos };
+  } catch (error) {
+    return { success: false };
   }
 };

@@ -17,6 +17,7 @@ const movieSchema = new mongoose.Schema(
     youtubeId: { type: String, required: false },
     size: { type: String, required: false },
     languages: { type: [String], required: false },
+    genres: { type: [String], required: false },
     magnets: {
       type: [
         {
