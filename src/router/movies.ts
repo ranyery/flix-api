@@ -7,12 +7,13 @@ import {
   getById,
   updateById,
 } from "../controllers/movies";
+import { authMiddleware } from "../middlewares/authMiddleware";
 import { validateLimit } from "../middlewares/validateLimit";
 
 export default (router: Router) => {
   router.get("/movies", validateLimit, getAll);
   router.get("/movies/:id", getById);
-  router.post("/movies", create);
-  router.put("/movies/:id", updateById);
-  router.delete("/movies/:id", deleteById);
+  router.post("/movies", authMiddleware, create);
+  router.put("/movies/:id", authMiddleware, updateById);
+  router.delete("/movies/:id", authMiddleware, deleteById);
 };
