@@ -13,7 +13,9 @@
   "terminal.integrated.defaultProfile.windows": "Git Bash",
   "git.allowNoVerifyCommit": false,
   "files.exclude": {
+    ".husky": true,
     ".vscode": true,
+    "dist": true,
     "node_modules": true,
     ".editorconfig": true,
     ".env": true,
