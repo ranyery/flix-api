@@ -17,7 +17,7 @@ import {
   getRequiredProperties,
   MovieModel,
   updateMovieById,
-} from "../models/movies";
+} from "../models/Movie";
 
 export const getAll = async (req: Request, res: Response) => {
   const sortMap: { [k: string]: SortOrder } = {

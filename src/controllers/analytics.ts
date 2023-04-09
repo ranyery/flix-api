@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { StatusCodes as STATUS_CODES } from "http-status-codes";
 
 import { handleErrorId, handleServerError, isValidId } from "../helpers";
-import { updateClicks, updateViews } from "../models/movies";
+import { updateClicks, updateViews } from "../models/Movie";
 
 export const addClick = async (req: Request, res: Response) => {
   const id = req.params["id"]?.trim();
