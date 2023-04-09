@@ -1,26 +1,29 @@
 import { Request, Response } from "express";
+import { StatusCodes as STATUS_CODES } from "http-status-codes";
 import { sign } from "jsonwebtoken";
 
 import jwtConfig from "../config/jwtConfig";
 import User from "../models/User";
 
-// export const create = async (req: Request, res: Response) => {
-//   const { email, password } = req.body;
+export const create = async (req: Request, res: Response) => {
+  return res.status(STATUS_CODES.FORBIDDEN).send();
 
-//   try {
-//     const user = new User({ email, password });
-//     await user.save();
+  const { email, password } = req.body;
 
-//     const token = sign({ email }, jwtConfig.secretKey, {
-//       expiresIn: jwtConfig.expiresIn,
-//     });
+  try {
+    const user = new User({ email, password });
+    await user.save();
 
-//     res.json({ token });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
+    const token = sign({ email }, jwtConfig.secretKey, {
+      expiresIn: jwtConfig.expiresIn,
+    });
+
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const authenticate = async (req: Request, res: Response) => {
   const { email, password } = req.body;
