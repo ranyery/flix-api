@@ -14,6 +14,7 @@ import {
   createMovie,
   deleteMovieById,
   getMovieById,
+  getRequiredProperties,
   MovieModel,
   updateMovieById,
 } from "../models/movies";
@@ -51,10 +52,9 @@ export const getAll = async (req: Request, res: Response) => {
         .limit(limit),
     ]);
 
-    const filteredMovies = movies.map((movie) => {
-      if (movie["imdbRating"] === "") {
-        delete movie["imdbRating"];
-      }
+    const filteredMovies = movies.map((movie: Record<string, any>) => {
+      movie["id"] = movie["_id"];
+      delete movie["_id"];
 
       return movie;
     });
@@ -73,7 +73,7 @@ export const getAll = async (req: Request, res: Response) => {
 };
 
 export const getById = async (req: Request, res: Response) => {
-  const id = req.params["id"]?.trim();
+  const { id } = req.params;
   if (!id || !isValidId(id)) return handleErrorId(res);
 
   try {
@@ -96,7 +96,12 @@ export const getById = async (req: Request, res: Response) => {
       Object.assign(movie, { ...valuesToUpdate, ...otherInfos });
     }
 
-    return res.send(movie);
+    const { type } = req.query;
+    const requiredType = type === "partial" ? "partial" : "complete";
+
+    const json = getRequiredProperties(movie, requiredType);
+
+    return res.send(json);
   } catch (error) {
     handleServerError(res, error);
   }

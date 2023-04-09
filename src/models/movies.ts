@@ -75,3 +75,27 @@ export const updateClicks = (id: string) =>
 
 export const updateViews = (id: string) =>
   MovieModel.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true });
+
+export const getRequiredProperties = (
+  doc: Record<string, any>,
+  type: "complete" | "partial" = "complete"
+) => {
+  delete doc["_id"];
+  delete doc["views"];
+  delete doc["clicks"];
+  delete doc["tmdbId"];
+  delete doc["isActive"];
+  delete doc["isHighlight"];
+  delete doc["createdAt"];
+
+  if (type === "complete") {
+    return doc;
+  }
+
+  delete doc["title"];
+  delete doc["imdbRating"];
+  delete doc["releaseDate"];
+  delete doc["image"]?.["poster"];
+
+  return doc;
+};
