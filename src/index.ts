@@ -26,8 +26,6 @@ app.use(express.json());
 
 app.disable("x-powered-by");
 
-app.use(setCacheControl);
-
 app.set("trust proxy", true);
 app.use((req, res, next) => {
   const start = Date.now();
@@ -51,6 +49,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use(setCacheControl);
 
 app.get("/", (request, response) => {
   response.send({ message: "Hello, World!" });
