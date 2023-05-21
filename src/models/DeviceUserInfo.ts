@@ -10,6 +10,7 @@ const deviceUserInfo = new mongoose.Schema(
     userAgentData: { type: Object, required: false },
     width: { type: Number, required: false },
     height: { type: Number, required: false },
+    ip: { type: String, required: false },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
