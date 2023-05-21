@@ -3,6 +3,7 @@ import { StatusCodes as STATUS_CODES } from "http-status-codes";
 
 import { handleErrorId, handleServerError, isValidId } from "../helpers";
 import { updateClicks, updateViews } from "../models/Movie";
+import { createSearch } from "../models/Search";
 
 export const addClick = async (req: Request, res: Response) => {
   const id = req.params["id"]?.trim();
@@ -29,6 +30,20 @@ export const addView = async (req: Request, res: Response) => {
     if (!updatedMovie) return res.status(STATUS_CODES.BAD_REQUEST).send();
 
     return res.send();
+  } catch (error) {
+    handleServerError(res, error);
+  }
+};
+
+export const saveSearch = async (req: Request, res: Response) => {
+  const term = req.params["term"]?.trim();
+
+  try {
+    const createdSearch = await createSearch({ term });
+
+    if (!createdSearch) return res.status(STATUS_CODES.BAD_REQUEST).send();
+
+    return res.send({ message: "ok" });
   } catch (error) {
     handleServerError(res, error);
   }
